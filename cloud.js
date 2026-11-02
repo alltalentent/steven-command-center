@@ -3,12 +3,13 @@ import {initializeApp} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-
 import {getAuth,GoogleAuthProvider,signInWithPopup,signOut,onAuthStateChanged} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import {getFirestore,doc,getDoc,setDoc} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 const storageKey="steven_firebase_config_v1";
+const defaultFirebaseConfig={"apiKey":"AIzaSyDf7pHpU2JyES8x6PkaU7c2t6hGeYQFBWQ","authDomain":"steven-command-center-513b5.firebaseapp.com","projectId":"steven-command-center-513b5","storageBucket":"steven-command-center-513b5.firebasestorage.app","messagingSenderId":"990294004490","appId":"1:990294004490:web:65c813bf855b1d9bb4a0f3","measurementId":"G-513S3LN1K4"};
 let auth,db,currentUser=null,ref=null,syncEnabled=false,working=false,latest=null;
 const status=(s)=>{const e=document.getElementById("cloudStatus");if(e)e.textContent=s;};
 const valid=d=>d&&["tasks","events","projects"].every(k=>Array.isArray(d[k]));
 const errorText=e=>({ "auth/unauthorized-domain":"請先在 Firebase Authentication 加入 alltalentent.github.io 授權網域","auth/operation-not-allowed":"請先啟用 Google 登入供應商","permission-denied":"Firestore 權限不足：請確認 Rules 已發布","auth/popup-blocked":"瀏覽器封鎖登入視窗，請允許彈出視窗"}[e?.code]||e?.message||String(e));
 function show(){const el=document.getElementById("cloudAccount");if(el)el.textContent=currentUser?currentUser.email+" · "+(syncEnabled?"雲端同步中":"待確認同步"):"尚未登入";}
-const cloud={get ready(){return syncEnabled&&!!currentUser},get user(){return currentUser},get config(){try{return JSON.parse(localStorage.getItem(storageKey))}catch{return null}},
+const cloud={get ready(){return syncEnabled&&!!currentUser},get user(){return currentUser},get config(){try{return JSON.parse(localStorage.getItem(storageKey))}catch{return defaultFirebaseConfig}},
  async setup(raw){let c=typeof raw==="string"?JSON.parse(raw):raw;if(!c.apiKey||!c.appId||c.projectId!=="steven-command-center-513b5")throw Error("請貼上此專案完整的 Firebase Web App 設定（apiKey / appId / projectId）");localStorage.setItem(storageKey,JSON.stringify(c));location.reload()},
  async connect(){let c=cloud.config;if(!c){status("尚未設定 Firebase Web App");return}try{const app=initializeApp(c);auth=getAuth(app);db=getFirestore(app);onAuthStateChanged(auth,async user=>{currentUser=user;syncEnabled=false;ref=null;show();if(user){await initializeUser(user)}else{status("尚未登入 Google");show()}window.render?.()})}catch(e){status("Firebase 初始化失敗："+errorText(e))}},
  async login(){if(!auth){alert("請先在 Settings 貼上 Firebase Web App 設定");window.navigate?.("settings");return}try{await signInWithPopup(auth,new GoogleAuthProvider())}catch(e){alert("Google 登入失敗："+errorText(e))}},
